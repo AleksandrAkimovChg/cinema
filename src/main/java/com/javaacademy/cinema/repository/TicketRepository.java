@@ -1,7 +1,6 @@
 package com.javaacademy.cinema.repository;
 
 import com.javaacademy.cinema.entity.Ticket;
-import com.javaacademy.cinema.exception.TicketNotSoldException;
 import com.javaacademy.cinema.exception.TicketNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -33,14 +32,12 @@ public class TicketRepository {
 
     public List<Ticket> findAllNotSoldTicket(Integer id) {
         String sql = "select * from ticket where session_id = ? and is_purchased = false;";
-        List<Ticket> result = jdbcTemplate.query(sql, this::mapToTicket, id);
-        return result;
+        return jdbcTemplate.query(sql, this::mapToTicket, id);
     }
 
     public List<Ticket> findAllSoldTickets(Integer id) {
         String sql = "select * from ticket where session_id = ? and is_purchased = true;";
-        List<Ticket> result = jdbcTemplate.query(sql, this::mapToTicket, id);
-        return result;
+        return jdbcTemplate.query(sql, this::mapToTicket, id);
     }
 
     public Ticket save(Ticket ticket) {
