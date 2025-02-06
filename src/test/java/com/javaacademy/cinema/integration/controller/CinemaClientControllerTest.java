@@ -154,10 +154,10 @@ public class CinemaClientControllerTest {
                 placeRepository::mapToPlace);
         Ticket expected = jdbcTemplate.queryForObject("""
                         select *
-                         from ticket
-                         where session_id = ? and place_id = ?
-                         order by id asc
-                         limit 1;""",
+                        from ticket
+                        where session_id = ? and place_id = ?
+                        order by id asc
+                        limit 1;""",
                 ticketRepository::mapToTicket,
                 lastSession.getId(),
                 lastPlace.getId());
