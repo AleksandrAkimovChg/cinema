@@ -1,7 +1,10 @@
 package com.javaacademy.cinema.controller;
 
+import com.javaacademy.cinema.exception.MovieNotFoundException;
+import com.javaacademy.cinema.exception.PlaceNotFoundException;
 import com.javaacademy.cinema.exception.SecretTokenCheckFailedException;
 import com.javaacademy.cinema.exception.SessionDateTimeInvalidFormatException;
+import com.javaacademy.cinema.exception.SessionNotFoundException;
 import com.javaacademy.cinema.exception.TicketAlreadySoldException;
 import com.javaacademy.cinema.exception.TicketNotFoundException;
 import com.javaacademy.cinema.exception.TicketNotSoldException;
@@ -15,7 +18,7 @@ public class GlobalExceptionHandler extends RuntimeException {
 
     @ExceptionHandler(SecretTokenCheckFailedException.class)
     public ResponseEntity handlerSecurityException(RuntimeException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 
     @ExceptionHandler(TicketAlreadySoldException.class)
@@ -36,5 +39,14 @@ public class GlobalExceptionHandler extends RuntimeException {
     @ExceptionHandler(TicketNotSoldException.class)
     public ResponseEntity handlerTicketNotSoldException(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
+    }
+
+    @ExceptionHandler({
+            MovieNotFoundException.class,
+            SessionNotFoundException.class,
+            PlaceNotFoundException.class
+    })
+    public ResponseEntity handlerServerErrorException(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 }

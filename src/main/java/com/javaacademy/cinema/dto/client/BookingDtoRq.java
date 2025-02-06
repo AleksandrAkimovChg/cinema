@@ -1,17 +1,20 @@
 package com.javaacademy.cinema.dto.client;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
 
 @Data
-@AllArgsConstructor
 public class BookingDtoRq {
-    @JsonProperty("session_id")
-    @NonNull
+    @JsonProperty(value = "session_id", required = true)
     private Integer id;
-    @JsonProperty("place_name")
-    @NonNull
+    @JsonProperty(value = "place_name", required = true)
     private String place;
+
+    @JsonCreator
+    public BookingDtoRq(@NonNull Integer id, @NonNull String place) {
+        this.id = id;
+        this.place = place;
+    }
 }

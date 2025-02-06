@@ -45,12 +45,12 @@ public class CinemaClientMapper {
         return place.stream().map(this::convertToNamePlace).toList();
     }
 
-    public BookingDtoRs convertToBookingDtoRs(Ticket ticket, Session session) {
+    public BookingDtoRs convertToBookingDtoRs(Ticket ticket) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
         return new BookingDtoRs(
                 ticket.getId(),
                 ticket.getPlace().getName(),
-                session.getMovie().getName(),
-                session.getDateTime().format(formatter));
+                ticket.getSession().getMovie().getName(),
+                ticket.getSession().getDateTime().format(formatter));
     }
 }

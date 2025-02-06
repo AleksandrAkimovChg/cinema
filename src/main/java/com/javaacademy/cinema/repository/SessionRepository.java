@@ -1,6 +1,7 @@
 package com.javaacademy.cinema.repository;
 
 import com.javaacademy.cinema.entity.Session;
+import com.javaacademy.cinema.exception.MovieNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,13 +15,14 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class SessionRepository {
+    public static final String FILM_NOT_FOUND = "Фильм с таким id не найден";
     private final JdbcTemplate jdbcTemplate;
     private final MovieRepository movieRepository;
 
-    public Optional<Session> findById(Integer id) {
+    public Optional<Session> findById(Integer sessionId) {
         String sql = "select * from session where id = ?;";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToSession, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToSession, sessionId));
         } catch (IncorrectResultSizeDataAccessException ex) {
             return Optional.empty();
         }
@@ -28,8 +30,7 @@ public class SessionRepository {
 
     public List<Session> findAll() {
         String sql = "select * from session;";
-        List<Session> result = jdbcTemplate.query(sql, this::mapToSession);
-        return result;
+        return jdbcTemplate.query(sql, this::mapToSession);
     }
 
     public Session save(Session session) {
@@ -52,7 +53,8 @@ public class SessionRepository {
         session.setPrice(rs.getBigDecimal("price"));
         if (rs.getString("movie_id") != null) {
             Integer movieId = Integer.valueOf(rs.getString("movie_id"));
-            session.setMovie(movieRepository.findById(movieId).orElse(null));
+            session.setMovie(movieRepository.findById(movieId)
+                    .orElseThrow(() -> new MovieNotFoundException(FILM_NOT_FOUND)));
         }
         return session;
     }

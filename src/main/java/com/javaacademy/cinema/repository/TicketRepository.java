@@ -1,7 +1,10 @@
 package com.javaacademy.cinema.repository;
 
 import com.javaacademy.cinema.entity.Ticket;
+import com.javaacademy.cinema.exception.PlaceNotFoundException;
+import com.javaacademy.cinema.exception.SessionNotFoundException;
 import com.javaacademy.cinema.exception.TicketNotFoundException;
+import com.javaacademy.cinema.exception.TicketNotSoldException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,28 +19,40 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TicketRepository {
     public static final String TICKET_NOT_FOUND = "Билет не найден";
+    public static final String SESSION_NOT_FOUND = "Сеанс с таким id не найден";
+    public static final String PLACE_NOT_FOUND = "Место не найдено";
+    public static final String TICKET_NOT_SOLD = "Операция временно не доступна. Попробуйте повторить позднее.";
 
     private final JdbcTemplate jdbcTemplate;
     private final SessionRepository sessionRepository;
     private final PlaceRepository placeRepository;
 
-    public Optional<Ticket> findById(Integer id) {
+    public Optional<Ticket> findById(Integer ticketId) {
         String sql = "select * from ticket where id = ?;";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, ticketId));
         } catch (IncorrectResultSizeDataAccessException ex) {
             return Optional.empty();
         }
     }
 
-    public List<Ticket> findAllNotSoldTicket(Integer id) {
+    public List<Ticket> findAllNotSoldTicket(Integer sessionId) {
         String sql = "select * from ticket where session_id = ? and is_purchased = false;";
-        return jdbcTemplate.query(sql, this::mapToTicket, id);
+        return jdbcTemplate.query(sql, this::mapToTicket, sessionId);
     }
 
-    public List<Ticket> findAllSoldTickets(Integer id) {
+    public List<Ticket> findAllSoldTickets(Integer sessionId) {
         String sql = "select * from ticket where session_id = ? and is_purchased = true;";
-        return jdbcTemplate.query(sql, this::mapToTicket, id);
+        return jdbcTemplate.query(sql, this::mapToTicket, sessionId);
+    }
+
+    public Optional<Ticket> findTicketBySessionIdAndPlaceId(Integer sessionId, Integer placeId) {
+        String sql = "select * from ticket where session_id = ? and place_id = ?;";
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, sessionId, placeId));
+        } catch (IncorrectResultSizeDataAccessException ex) {
+            return Optional.empty();
+        }
     }
 
     public Ticket save(Ticket ticket) {
@@ -53,12 +68,12 @@ public class TicketRepository {
         return ticket;
     }
 
-    public void sold(Integer id) {
-        Ticket ticket = findById(id).orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
+    public void sold(Integer ticketId) {
+        Ticket ticket = findById(ticketId).orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
         String sql = "update ticket set is_purchased = true where id = ?;";
         int countRows = jdbcTemplate.update(sql, ticket.getId());
         if (countRows < 1) {
-            throw new RuntimeException();
+            throw new TicketNotSoldException(TICKET_NOT_SOLD);
         }
     }
 
@@ -68,11 +83,13 @@ public class TicketRepository {
         ticket.setSold(rs.getBoolean("is_purchased"));
         if (rs.getString("session_id") != null) {
             Integer sessionId = Integer.valueOf(rs.getString("session_id"));
-            ticket.setSession(sessionRepository.findById(sessionId).orElse(null));
+            ticket.setSession(sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new SessionNotFoundException(SESSION_NOT_FOUND)));
         }
         if (rs.getString("place_id") != null) {
             Integer placeId = Integer.valueOf(rs.getString("place_id"));
-            ticket.setPlace(placeRepository.findById(placeId).orElse(null));
+            ticket.setPlace(placeRepository.findById(placeId)
+                    .orElseThrow(() -> new PlaceNotFoundException(PLACE_NOT_FOUND)));
         }
         return ticket;
     }

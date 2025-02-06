@@ -16,10 +16,10 @@ import java.util.Optional;
 public class PlaceRepository {
     private final JdbcTemplate jdbcTemplate;
 
-    public Optional<Place> findById(Integer id) {
+    public Optional<Place> findById(Integer placeId) {
         String sql = "select * from place where id = ?;";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToPlace, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToPlace, placeId));
         } catch (IncorrectResultSizeDataAccessException ex) {
             return Optional.empty();
         }
@@ -27,8 +27,7 @@ public class PlaceRepository {
 
     public List<Place> findAll() {
         String sql = "select * from place;";
-        List<Place> result = jdbcTemplate.query(sql, this::mapToPlace);
-        return result;
+        return jdbcTemplate.query(sql, this::mapToPlace);
     }
 
     public Place mapToPlace(ResultSet rs, int rowNum) throws SQLException {

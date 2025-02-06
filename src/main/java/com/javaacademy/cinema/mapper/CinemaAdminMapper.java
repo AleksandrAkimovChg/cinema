@@ -40,7 +40,11 @@ public class CinemaAdminMapper {
     }
 
     public TicketAdminDto convertToTicketDto(Ticket ticket) {
-        return new TicketAdminDto(ticket.getId(), ticket.getSession(), ticket.getPlace(), ticket.isSold());
+        return new TicketAdminDto(
+                ticket.getId(),
+                ticket.getSession().getId(),
+                ticket.getPlace().getName(),
+                ticket.isSold());
     }
 
     public List<TicketAdminDto> convertToTicketDtos(List<Ticket> ticket) {

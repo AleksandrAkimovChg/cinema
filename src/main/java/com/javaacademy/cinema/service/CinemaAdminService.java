@@ -6,6 +6,7 @@ import com.javaacademy.cinema.dto.admin.TicketAdminDto;
 import com.javaacademy.cinema.entity.Movie;
 import com.javaacademy.cinema.entity.Session;
 import com.javaacademy.cinema.entity.Ticket;
+import com.javaacademy.cinema.exception.MovieNotFoundException;
 import com.javaacademy.cinema.mapper.CinemaAdminMapper;
 import com.javaacademy.cinema.repository.MovieRepository;
 import com.javaacademy.cinema.repository.PlaceRepository;
@@ -15,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static com.javaacademy.cinema.repository.SessionRepository.FILM_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +42,8 @@ public class CinemaAdminService {
     }
 
     private Session saveSession(SessionAdminDto dto) {
-        Movie movie = movieRepository.findById(dto.getMovie()).orElseThrow();
+        Movie movie = movieRepository.findById(dto.getMovie())
+                    .orElseThrow(() -> new MovieNotFoundException(FILM_NOT_FOUND));
         Session session = cinemaAdminMapper.convertToSession(dto);
         session.setMovie(movie);
         return sessionRepository.save(session);

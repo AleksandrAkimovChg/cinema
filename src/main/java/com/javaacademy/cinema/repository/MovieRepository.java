@@ -19,10 +19,10 @@ import java.util.Optional;
 public class MovieRepository {
     private final JdbcTemplate jdbcTemplate;
 
-    public Optional<Movie> findById(Integer id) {
+    public Optional<Movie> findById(Integer movieId) {
         String sql = "select * from movie where id = ?;";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToMovie, id));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToMovie, movieId));
         } catch (IncorrectResultSizeDataAccessException ex) {
             return Optional.empty();
         }
@@ -30,8 +30,7 @@ public class MovieRepository {
 
     public List<Movie> findAll() {
         String sql = "select * from movie;";
-        List<Movie> result = jdbcTemplate.query(sql, this::mapToMovie);
-        return result;
+        return jdbcTemplate.query(sql, this::mapToMovie);
     }
 
     public Movie save(Movie movie) {
