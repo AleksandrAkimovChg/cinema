@@ -8,7 +8,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class BookingDtoRs {
     @JsonProperty("ticket_id")
-    private Integer id;
+    private Integer ticketId;
     @JsonProperty("place_name")
     private String place;
     @JsonProperty("movie_name")

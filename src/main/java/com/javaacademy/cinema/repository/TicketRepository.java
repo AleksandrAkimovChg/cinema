@@ -22,13 +22,18 @@ public class TicketRepository {
     public static final String SESSION_NOT_FOUND = "Сеанс с таким id не найден";
     public static final String PLACE_NOT_FOUND = "Место не найдено";
     public static final String TICKET_NOT_SOLD = "Операция временно не доступна. Попробуйте повторить позднее.";
+    public static final String NOT_FOUND_TICKET_BY_SESSION_ID_AND_PLACE_NAME = "Нет билета на сеанс %s c местом %s";
 
     private final JdbcTemplate jdbcTemplate;
     private final SessionRepository sessionRepository;
     private final PlaceRepository placeRepository;
 
     public Optional<Ticket> findById(Integer ticketId) {
-        String sql = "select * from ticket where id = ?;";
+        String sql = """
+                select *
+                from ticket
+                where id = ?;
+                """;
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, ticketId));
         } catch (IncorrectResultSizeDataAccessException ex) {
@@ -37,26 +42,42 @@ public class TicketRepository {
     }
 
     public List<Ticket> findAllNotSoldTicket(Integer sessionId) {
-        String sql = "select * from ticket where session_id = ? and is_purchased = false;";
+        String sql = """
+                select *
+                from ticket
+                where session_id = ? and is_purchased = false;
+                """;
         return jdbcTemplate.query(sql, this::mapToTicket, sessionId);
     }
 
     public List<Ticket> findAllSoldTickets(Integer sessionId) {
-        String sql = "select * from ticket where session_id = ? and is_purchased = true;";
+        String sql = """
+                select *
+                from ticket
+                where session_id = ? and is_purchased = true;
+                """;
         return jdbcTemplate.query(sql, this::mapToTicket, sessionId);
     }
 
-    public Optional<Ticket> findTicketBySessionIdAndPlaceId(Integer sessionId, Integer placeId) {
-        String sql = "select * from ticket where session_id = ? and place_id = ?;";
+    public Optional<Ticket> findTicketBySessionIdAndPlaceName(Integer sessionId, String placeName) {
+        String sql = """
+                select t.*
+                from ticket t
+                    inner join place p on t.place_id = p.id
+                where t.session_id = ? and p.name = ?;
+                """;
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, sessionId, placeId));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, sessionId, placeName));
         } catch (IncorrectResultSizeDataAccessException ex) {
-            return Optional.empty();
+            throw new TicketNotFoundException(NOT_FOUND_TICKET_BY_SESSION_ID_AND_PLACE_NAME);
         }
     }
 
     public Ticket save(Ticket ticket) {
-        String sql = "insert into ticket (session_id, place_id, is_purchased) values(?, ?, ?) returning id;";
+        String sql = """
+                insert into ticket (session_id, place_id, is_purchased)
+                values(?, ?, ?) returning id;
+                """;
         Integer id = jdbcTemplate.queryForObject(
                 sql,
                 Integer.class,
@@ -68,9 +89,14 @@ public class TicketRepository {
         return ticket;
     }
 
-    public void sold(Integer ticketId) {
-        Ticket ticket = findById(ticketId).orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
-        String sql = "update ticket set is_purchased = true where id = ?;";
+    public void soldBySessionIdAndName(Integer sessionId, String placeName) {
+        Ticket ticket = findTicketBySessionIdAndPlaceName(sessionId, placeName)
+                .orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
+        String sql = """
+                update ticket
+                set is_purchased = true
+                where id = ?;
+                """;
         int countRows = jdbcTemplate.update(sql, ticket.getId());
         if (countRows < 1) {
             throw new TicketNotSoldException(TICKET_NOT_SOLD);

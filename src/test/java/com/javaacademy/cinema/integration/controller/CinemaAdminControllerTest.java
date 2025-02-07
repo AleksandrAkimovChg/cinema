@@ -34,6 +34,13 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.javaacademy.cinema.controller.CinemaAdminController.SECRET_TOKEN_CHECK_FAILED;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_ALL_PLACES;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_SOLD_TICKETS;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_MOVIE_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_PLACE_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_SESSION_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_SESSION_WITH_SOLD_TICKET;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_TICKET_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -70,12 +77,7 @@ public class CinemaAdminControllerTest {
     @Test
     @DisplayName("Успешное создание фильма админом кинотеатра")
     public void createMovieSuccess() {
-        Integer lastMovieId = jdbcTemplate.queryForObject("""
-                        select id
-                        from movie
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
+        Integer lastMovieId = getLastMovieId();
         final String nameExpected = "Тест успешное создание фильма - name";
         final String descriptionExpected = "Тест успешное создание фильма - description";
         MovieAdminDto movieAdminDtoRq = new MovieAdminDto(null, nameExpected, descriptionExpected);
@@ -103,34 +105,14 @@ public class CinemaAdminControllerTest {
     @Test
     @DisplayName("Успешное создание сеанса фильма админом кинотеатра")
     public void createSessionSuccess() {
-        Integer lastMovieId = jdbcTemplate.queryForObject("""
-                        select id
-                        from movie
-                        order by id desc
-                        limit 1;""",
+        Movie expectedMovie = movieRepository.findById(getLastMovieId()).get();
+        Integer expectedLastSessionId = lastSessionId() + 1;
+        Integer countPlace = jdbcTemplate.queryForObject(
+                COUNT_ALL_PLACES.getSqlQuery(),
                 Integer.class);
-        Movie expectedMovie = movieRepository.findById(lastMovieId).get();
-        Integer lastSessionId = jdbcTemplate.queryForObject("""
-                        select id
-                        from session
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
-        Integer countPlace = jdbcTemplate.queryForObject("""
-                        select count(*)
-                        from place;""",
-                Integer.class);
-        Integer lastTicketId = jdbcTemplate.queryForObject("""
-                        select id
-                        from ticket
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
-        Integer lastPlaceId = jdbcTemplate.queryForObject("""
-                        select id
-                        from place
-                        order by id desc
-                        limit 1;""",
+        Integer lastTicketId = lastTicketId();
+        Integer expectedLastPlaceId = jdbcTemplate.queryForObject(
+                LAST_PLACE_ID.getSqlQuery(),
                 Integer.class);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
@@ -138,7 +120,7 @@ public class CinemaAdminControllerTest {
         SessionAdminDto sessionAdminDto = new SessionAdminDto(
                 formattedDateTime,
                 new BigDecimal("500.00"),
-                lastMovieId);
+                expectedMovie.getId());
 
         RestAssured.given(requestSpec)
                 .body(sessionAdminDto)
@@ -146,47 +128,29 @@ public class CinemaAdminControllerTest {
                 .then()
                 .spec(responseSpec)
                 .statusCode(HttpStatus.CREATED.value());
+        Session actualSession = sessionRepository.findById(lastSessionId()).get();
+        Ticket actualLastTicket = ticketRepository.findById(lastTicketId()).get();
 
-        Integer actualLastSessionId = jdbcTemplate.queryForObject("""
-                        select id
-                        from session
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
-        Session actualSession = sessionRepository.findById(actualLastSessionId).get();
-        lastSessionId++;
-        assertEquals(lastSessionId, actualSession.getId());
+        assertEquals(expectedLastSessionId, actualSession.getId());
         assertEquals(formattedDateTime, actualSession.getDateTime().format(formatter));
         assertEquals(new BigDecimal("500.00"), actualSession.getPrice());
         assertEquals(expectedMovie, actualSession.getMovie());
 
-        Integer actualLastTicketId = jdbcTemplate.queryForObject("""
-                        select id
-                        from ticket
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
-        Ticket actualLastTicket = ticketRepository.findById(actualLastTicketId).get();
-        assertEquals(lastTicketId + countPlace, actualLastTicketId);
-        assertEquals(lastPlaceId, actualLastTicket.getPlace().getId());
+        assertEquals(lastTicketId + countPlace, actualLastTicket.getId());
+        assertEquals(expectedLastPlaceId, actualLastTicket.getPlace().getId());
         assertFalse(actualLastTicket.isSold());
     }
 
     @Test
     @DisplayName("Успешное получение проданных билетов на сеанс")
     public void getSoldTicketsOnSessionSuccess() {
-        Integer lastSessionWithSoldTicket = jdbcTemplate.queryForObject("""
-                        select distinct session_id
-                        from ticket
-                        where is_purchased = true
-                        order by session_id desc
-                        limit 1;""",
+        Integer lastSessionWithSoldTicket = jdbcTemplate.queryForObject(
+                LAST_SESSION_WITH_SOLD_TICKET.getSqlQuery(),
                 Integer.class);
-        Integer countSoldTicket = jdbcTemplate.queryForObject("""
-                        select count(*)
-                        from ticket
-                        where session_id = %s and is_purchased = true;""".formatted(lastSessionWithSoldTicket),
-                Integer.class);
+        Integer countSoldTickets = jdbcTemplate.queryForObject(
+                COUNT_SOLD_TICKETS.getSqlQuery(),
+                Integer.class,
+                lastSessionWithSoldTicket);
 
         List<TicketAdminDto> soldTickets = RestAssured.given(requestSpec)
                 .queryParam(QUERY_PARAM_SESSION, lastSessionWithSoldTicket)
@@ -199,55 +163,56 @@ public class CinemaAdminControllerTest {
                 .as(new TypeRef<>() {
                 });
 
-        assertEquals(countSoldTicket, soldTickets.size());
+        assertEquals(countSoldTickets, soldTickets.size());
         assertEquals(lastSessionWithSoldTicket, soldTickets.stream().findFirst().get().getSession());
     }
 
     @Test
-    @DisplayName("Нет секретного заголовка - отдан 409 код состояния")
+    @DisplayName("Нет секретного заголовка - отдан 403 код состояния")
     public void checkSecretHeaderFailure() {
         final RequestSpecification requestSpecSecret = new RequestSpecBuilder()
                 .setBasePath("/api/v1/ticket/sold")
                 .log(LogDetail.ALL)
                 .build();
-        String lastSessionQuery = "";
-        Integer lastSessionId = jdbcTemplate.queryForObject("""
-                        select id
-                        from session
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
+        Integer lastSessionId = lastSessionId();
 
         RestAssured.given(requestSpecSecret)
                 .queryParam("session", lastSessionId)
                 .get()
                 .then()
                 .spec(responseSpec)
-                .statusCode(HttpStatus.CONFLICT.value())
+                .statusCode(HttpStatus.FORBIDDEN.value())
                 .body(Matchers.equalTo(SECRET_TOKEN_CHECK_FAILED));
     }
 
     @Test
-    @DisplayName("Не совпадает секретный заголовок - отдан 409 код состояния")
+    @DisplayName("Не совпадает секретный заголовок - отдан 403 код состояния")
     public void checkSecretTokenEmptyFailure() {
         final RequestSpecification requestSpecSecret = new RequestSpecBuilder()
                 .setBasePath("/api/v1/ticket/sold")
                 .addHeader("user-token", UUID.randomUUID().toString())
                 .log(LogDetail.ALL)
                 .build();
-        Integer lastSessionId = jdbcTemplate.queryForObject("""
-                        select id
-                        from session
-                        order by id desc
-                        limit 1;""",
-                Integer.class);
+        Integer lastSessionId = lastSessionId();
 
         RestAssured.given(requestSpecSecret)
                 .queryParam("session", lastSessionId)
                 .get()
                 .then()
                 .spec(responseSpec)
-                .statusCode(HttpStatus.CONFLICT.value())
+                .statusCode(HttpStatus.FORBIDDEN.value())
                 .body(Matchers.equalTo(SECRET_TOKEN_CHECK_FAILED));
+    }
+
+    private Integer getLastMovieId() {
+        return jdbcTemplate.queryForObject(LAST_MOVIE_ID.getSqlQuery(), Integer.class);
+    }
+
+    private Integer lastSessionId() {
+        return jdbcTemplate.queryForObject(LAST_SESSION_ID.getSqlQuery(), Integer.class);
+    }
+
+    private Integer lastTicketId() {
+        return jdbcTemplate.queryForObject(LAST_TICKET_ID.getSqlQuery(), Integer.class);
     }
 }

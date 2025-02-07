@@ -20,7 +20,11 @@ public class SessionRepository {
     private final MovieRepository movieRepository;
 
     public Optional<Session> findById(Integer sessionId) {
-        String sql = "select * from session where id = ?;";
+        String sql = """
+                select *
+                from session
+                where id = ?;
+                """;
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToSession, sessionId));
         } catch (IncorrectResultSizeDataAccessException ex) {
@@ -29,12 +33,18 @@ public class SessionRepository {
     }
 
     public List<Session> findAll() {
-        String sql = "select * from session;";
+        String sql = """
+                select *
+                from session;
+                """;
         return jdbcTemplate.query(sql, this::mapToSession);
     }
 
     public Session save(Session session) {
-        String sql = "insert into session (date_time, price, movie_id) values(?, ?, ?) returning id;";
+        String sql = """
+                insert into session (date_time, price, movie_id)
+                values(?, ?, ?) returning id;
+                """;
         Integer id = jdbcTemplate.queryForObject(
                 sql,
                 Integer.class,

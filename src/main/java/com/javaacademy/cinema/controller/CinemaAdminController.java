@@ -5,7 +5,7 @@ import com.javaacademy.cinema.dto.admin.MovieAdminDto;
 import com.javaacademy.cinema.dto.admin.SessionAdminDto;
 import com.javaacademy.cinema.dto.admin.TicketAdminDto;
 import com.javaacademy.cinema.exception.SecretTokenCheckFailedException;
-import com.javaacademy.cinema.service.CinemaAdminService;
+import com.javaacademy.cinema.service.CinemaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +27,7 @@ import java.util.Objects;
 public class CinemaAdminController {
     public static final String SECRET_TOKEN_CHECK_FAILED = "Нет прав на операцию. Обратитесь в службу поддержки.";
 
-    private final CinemaAdminService cinemaAdminService;
+    private final CinemaService cinemaService;
     private final CinemaSecurityProperty cinemaSecurityProperty;
 
     @PostMapping("/movie")
@@ -36,7 +36,7 @@ public class CinemaAdminController {
             @RequestHeader Map<String, String> headers,
             @RequestBody MovieAdminDto dto) {
         checkSecurityToken(headers);
-        return cinemaAdminService.createMovie(dto);
+        return cinemaService.createMovie(dto);
     }
 
     @PostMapping("/session")
@@ -45,7 +45,7 @@ public class CinemaAdminController {
             @RequestHeader Map<String, String> headers,
             @RequestBody SessionAdminDto dto) {
         checkSecurityToken(headers);
-        cinemaAdminService.createSession(dto);
+        cinemaService.createSession(dto);
     }
 
     @GetMapping("/ticket/sold")
@@ -53,7 +53,7 @@ public class CinemaAdminController {
             @RequestHeader Map<String, String> headers,
             @RequestParam("session") Integer sessionId) {
         checkSecurityToken(headers);
-        return cinemaAdminService.getSoldTicketsOnSession(sessionId);
+        return cinemaService.getSoldTicketsOnSession(sessionId);
     }
 
     private void checkSecurityToken(Map<String, String> headers) {

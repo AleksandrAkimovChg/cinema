@@ -17,7 +17,11 @@ public class PlaceRepository {
     private final JdbcTemplate jdbcTemplate;
 
     public Optional<Place> findById(Integer placeId) {
-        String sql = "select * from place where id = ?;";
+        String sql = """
+                select *
+                from place
+                where id = ?;
+                """;
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToPlace, placeId));
         } catch (IncorrectResultSizeDataAccessException ex) {
@@ -26,7 +30,10 @@ public class PlaceRepository {
     }
 
     public List<Place> findAll() {
-        String sql = "select * from place;";
+        String sql = """
+                select *
+                from place;
+                """;
         return jdbcTemplate.query(sql, this::mapToPlace);
     }
 

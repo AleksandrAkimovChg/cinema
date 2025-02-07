@@ -4,10 +4,8 @@ import com.javaacademy.cinema.dto.client.BookingDtoRq;
 import com.javaacademy.cinema.dto.client.BookingDtoRs;
 import com.javaacademy.cinema.dto.client.MovieDto;
 import com.javaacademy.cinema.dto.client.SessionDto;
-import com.javaacademy.cinema.entity.Place;
-import com.javaacademy.cinema.entity.Session;
 import com.javaacademy.cinema.entity.Ticket;
-import com.javaacademy.cinema.mapper.CinemaClientMapper;
+import com.javaacademy.cinema.mapper.CinemaMapper;
 import com.javaacademy.cinema.repository.PlaceRepository;
 import com.javaacademy.cinema.repository.SessionRepository;
 import com.javaacademy.cinema.repository.TicketRepository;
@@ -33,8 +31,12 @@ import java.util.List;
 
 import static com.javaacademy.cinema.integration.controller.CinemaAdminControllerTest.MOVIE_PATH;
 import static com.javaacademy.cinema.integration.controller.CinemaAdminControllerTest.SESSION_PATH;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_ALL_MOVIES;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_ALL_SESSIONS;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_FREE_PLACES_ON_SESSION;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_SESSION_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureMockMvc
@@ -48,7 +50,7 @@ public class CinemaClientControllerTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private CinemaClientMapper cinemaClientMapper;
+    private CinemaMapper cinemaMapper;
     @Autowired
     private TicketRepository ticketRepository;
     @Autowired
@@ -69,9 +71,8 @@ public class CinemaClientControllerTest {
     @Test
     @DisplayName("Успешное получение списка фильмов кинотеатра")
     public void getMoviesSuccess() {
-        Integer countMovie = jdbcTemplate.queryForObject("""
-                        select count(*)
-                        from movie;""",
+        Integer countMovie = jdbcTemplate.queryForObject(
+                COUNT_ALL_MOVIES.getSqlQuery(),
                 Integer.class);
 
         List<MovieDto> movieDto = RestAssured.given(requestSpec)
@@ -90,9 +91,8 @@ public class CinemaClientControllerTest {
     @Test
     @DisplayName("Успешное получение списка сеансов кинотеатра")
     public void getSessionsSuccess() {
-        Integer countSession = jdbcTemplate.queryForObject("""
-                        select count(*)
-                        from session;""",
+        Integer countSession = jdbcTemplate.queryForObject(
+                COUNT_ALL_SESSIONS.getSqlQuery(),
                 Integer.class);
 
         List<SessionDto> sessionDtos = RestAssured.given(requestSpec)
@@ -111,20 +111,16 @@ public class CinemaClientControllerTest {
     @Test
     @DisplayName("Успешное получение списка списка свободных мест на сеанс кинотеатра")
     public void getFreePLacesSuccess() {
-        Integer lastSession = jdbcTemplate.queryForObject("""
-                        select id
-                        from session
-                        order by id desc
-                        limit 1;""",
+        Integer lastSessionId = jdbcTemplate.queryForObject(
+                LAST_SESSION_ID.getSqlQuery(),
                 Integer.class);
-        Integer countFreePlacesOnSession = jdbcTemplate.queryForObject("""
-                        select count(*)
-                        from ticket
-                        where session_id = %s and is_purchased = false;""".formatted(lastSession),
-                Integer.class);
+        Integer countFreePlacesOnSession = jdbcTemplate.queryForObject(
+                COUNT_FREE_PLACES_ON_SESSION.getSqlQuery(),
+                Integer.class,
+                lastSessionId);
 
         List<String> freePlaces = RestAssured.given(requestSpec)
-                .get(FREE_PLACES_PATH.formatted(lastSession))
+                .get(FREE_PLACES_PATH.formatted(lastSessionId))
                 .then()
                 .spec(responseSpec)
                 .statusCode(HttpStatus.OK.value())
@@ -137,34 +133,17 @@ public class CinemaClientControllerTest {
     }
 
     @Test
-    @DisplayName("Успешное получение списка списка свободных мест на сеанс кинотеатра")
+    @DisplayName("Успешная покупка билета на сеанс и по месту")
     public void getBuyTicketSuccess() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-        Session lastSession = jdbcTemplate.queryForObject("""
-                        select *
-                        from session
-                        order by id desc
-                        limit 1;""",
-                sessionRepository::mapToSession);
-        Place lastPlace = jdbcTemplate.queryForObject("""
-                        select *
-                        from place
-                        order by id desc
-                        limit 1;""",
-                placeRepository::mapToPlace);
-        Ticket expected = jdbcTemplate.queryForObject("""
-                        select *
-                        from ticket
-                        where session_id = ? and place_id = ?
-                        order by id asc
-                        limit 1;""",
-                ticketRepository::mapToTicket,
-                lastSession.getId(),
-                lastPlace.getId());
-        assertFalse(expected.isSold());
-        BookingDtoRq bookingDtoRq = new BookingDtoRq(lastSession.getId(), lastPlace.getName());
+        Ticket expectedTicket = jdbcTemplate.queryForObject(
+                LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID.getSqlQuery(),
+                ticketRepository::mapToTicket);
+        BookingDtoRq bookingDtoRq = new BookingDtoRq(
+                expectedTicket.getSession().getId(),
+                expectedTicket.getPlace().getName());
 
-        BookingDtoRs actual = RestAssured.given(requestSpec)
+        BookingDtoRs actualTicket = RestAssured.given(requestSpec)
                 .body(bookingDtoRq)
                 .post(TICKET_BOOKING_PATH)
                 .then()
@@ -175,9 +154,9 @@ public class CinemaClientControllerTest {
                 .as(new TypeRef<>() {
                 });
 
-        assertEquals(expected.getId(), actual.getId());
-        assertEquals(expected.getPlace().getName(), actual.getPlace());
-        assertEquals(lastSession.getMovie().getName(), actual.getMovieName());
-        assertEquals(lastSession.getDateTime().format(formatter), actual.getDate());
+        assertEquals(expectedTicket.getId(), actualTicket.getTicketId());
+        assertEquals(expectedTicket.getPlace().getName(), actualTicket.getPlace());
+        assertEquals(expectedTicket.getSession().getMovie().getName(), actualTicket.getMovieName());
+        assertEquals(expectedTicket.getSession().getDateTime().format(formatter), actualTicket.getDate());
     }
 }

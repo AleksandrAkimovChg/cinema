@@ -1,17 +1,19 @@
 package com.javaacademy.cinema.service;
 
+import com.javaacademy.cinema.dto.admin.MovieAdminDto;
+import com.javaacademy.cinema.dto.admin.SessionAdminDto;
+import com.javaacademy.cinema.dto.admin.TicketAdminDto;
 import com.javaacademy.cinema.dto.client.BookingDtoRq;
 import com.javaacademy.cinema.dto.client.BookingDtoRs;
 import com.javaacademy.cinema.dto.client.MovieDto;
 import com.javaacademy.cinema.dto.client.SessionDto;
+import com.javaacademy.cinema.entity.Movie;
 import com.javaacademy.cinema.entity.Place;
 import com.javaacademy.cinema.entity.Session;
 import com.javaacademy.cinema.entity.Ticket;
-import com.javaacademy.cinema.exception.PlaceNotFoundException;
-import com.javaacademy.cinema.exception.SessionNotFoundException;
 import com.javaacademy.cinema.exception.TicketAlreadySoldException;
 import com.javaacademy.cinema.exception.TicketNotFoundException;
-import com.javaacademy.cinema.mapper.CinemaClientMapper;
+import com.javaacademy.cinema.mapper.CinemaMapper;
 import com.javaacademy.cinema.repository.MovieRepository;
 import com.javaacademy.cinema.repository.PlaceRepository;
 import com.javaacademy.cinema.repository.SessionRepository;
@@ -20,50 +22,62 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
-import static com.javaacademy.cinema.repository.TicketRepository.PLACE_NOT_FOUND;
-import static com.javaacademy.cinema.repository.TicketRepository.SESSION_NOT_FOUND;
 import static com.javaacademy.cinema.repository.TicketRepository.TICKET_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
-public class CinemaClientService {
+public class CinemaService {
     public static final String TICKET_ALREADY_SOLD = "Билет с № %s уже продан";
 
+    private final CinemaMapper cinemaMapper;
     private final MovieRepository movieRepository;
     private final SessionRepository sessionRepository;
-    private final CinemaClientMapper cinemaClientMapper;
     private final PlaceRepository placeRepository;
     private final TicketRepository ticketRepository;
 
+    public MovieAdminDto createMovie(MovieAdminDto dto) {
+        Movie movie = cinemaMapper.convertToMovie(dto);
+        Movie savedMovie = movieRepository.save(movie);
+        return cinemaMapper.convertToMovieAdminDto(savedMovie);
+    }
 
     public List<MovieDto> findAllMovies() {
-        return cinemaClientMapper.convertToMovieDto(movieRepository.findAll());
+        return cinemaMapper.convertToMovieDto(movieRepository.findAll());
+    }
+
+    public void createSession(SessionAdminDto dto) {
+        Session session = saveSession(dto);
+        List<Ticket> ticket = placeRepository.findAll().stream()
+                .map(place -> new Ticket(session, place)).toList();
+        ticket.forEach(ticketRepository::save);
+    }
+
+    private Session saveSession(SessionAdminDto dto) {
+        return sessionRepository.save(cinemaMapper.convertToSession(dto));
     }
 
     public List<SessionDto> findAllSessions() {
-        return cinemaClientMapper.convertToSessionDto(sessionRepository.findAll());
+        return cinemaMapper.convertToSessionDto(sessionRepository.findAll());
     }
 
     public List<String> findFreePlacesOnSession(Integer sessionId) {
         List<Place> placeList = ticketRepository.findAllNotSoldTicket(sessionId).stream()
                 .map(ticket -> ticket.getPlace()).toList();
-        return cinemaClientMapper.convertToNamePlaces(placeList);
+        return cinemaMapper.convertToNamePlaces(placeList);
     }
 
     public BookingDtoRs purchaseTicket(BookingDtoRq dto) {
-        Session session = sessionRepository.findById(dto.getId())
-                .orElseThrow(() -> new SessionNotFoundException(SESSION_NOT_FOUND));
-        Place place = placeRepository.findAll().stream()
-                .filter(e -> Objects.equals(dto.getPlace(), e.getName())).findFirst()
-                .orElseThrow(() -> new PlaceNotFoundException(PLACE_NOT_FOUND));
-        Ticket ticket = ticketRepository.findTicketBySessionIdAndPlaceId(session.getId(), place.getId()).
-                orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
+        Ticket ticket = ticketRepository.findTicketBySessionIdAndPlaceName(dto.getSessionId(), dto.getPlace())
+                .orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
         if (ticket.isSold()) {
             throw new TicketAlreadySoldException(TICKET_ALREADY_SOLD.formatted(ticket.getId()));
         }
-        ticketRepository.sold(ticket.getId());
-        return cinemaClientMapper.convertToBookingDtoRs(ticket);
+        ticketRepository.soldBySessionIdAndName(dto.getSessionId(), dto.getPlace());
+        return cinemaMapper.convertToBookingDtoRs(ticket);
+    }
+
+    public List<TicketAdminDto> getSoldTicketsOnSession(Integer id) {
+        return cinemaMapper.convertToTicketDtos(ticketRepository.findAllSoldTickets(id));
     }
 }

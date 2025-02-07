@@ -18,7 +18,7 @@ public class GlobalExceptionHandler extends RuntimeException {
 
     @ExceptionHandler(SecretTokenCheckFailedException.class)
     public ResponseEntity handlerSecurityException(RuntimeException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 
     @ExceptionHandler(TicketAlreadySoldException.class)
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler extends RuntimeException {
 
     @ExceptionHandler(SessionDateTimeInvalidFormatException.class)
     public ResponseEntity handlerSessionDateTimeInvalidFormatException(RuntimeException e) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 
     @ExceptionHandler(TicketNotFoundException.class)
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler extends RuntimeException {
 
     @ExceptionHandler(TicketNotSoldException.class)
     public ResponseEntity handlerTicketNotSoldException(RuntimeException e) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(e.getMessage());
     }
 
     @ExceptionHandler({

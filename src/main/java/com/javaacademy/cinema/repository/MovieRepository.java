@@ -20,7 +20,11 @@ public class MovieRepository {
     private final JdbcTemplate jdbcTemplate;
 
     public Optional<Movie> findById(Integer movieId) {
-        String sql = "select * from movie where id = ?;";
+        String sql = """
+                select *
+                from movie
+                where id = ?;
+                """;
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToMovie, movieId));
         } catch (IncorrectResultSizeDataAccessException ex) {
@@ -29,12 +33,18 @@ public class MovieRepository {
     }
 
     public List<Movie> findAll() {
-        String sql = "select * from movie;";
+        String sql = """
+                select *
+                from movie;
+                """;
         return jdbcTemplate.query(sql, this::mapToMovie);
     }
 
     public Movie save(Movie movie) {
-        String sql = "insert into movie (name, description) values(?, ?) returning id;";
+        String sql = """
+                insert into movie (name, description)
+                values(?, ?) returning id;
+                """;
         Integer id = jdbcTemplate.queryForObject(sql, Integer.class, movie.getName(), movie.getDescription());
         movie.setId(id);
         return movie;

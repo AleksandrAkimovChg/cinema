@@ -4,7 +4,7 @@ import com.javaacademy.cinema.dto.client.BookingDtoRq;
 import com.javaacademy.cinema.dto.client.BookingDtoRs;
 import com.javaacademy.cinema.dto.client.MovieDto;
 import com.javaacademy.cinema.dto.client.SessionDto;
-import com.javaacademy.cinema.service.CinemaClientService;
+import com.javaacademy.cinema.service.CinemaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,25 +19,25 @@ import java.util.List;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class CinemaClientController {
-    private final CinemaClientService cinemaClientService;
+    private final CinemaService cinemaService;
 
     @GetMapping("/movie")
     public List<MovieDto> getAllMovies() {
-        return cinemaClientService.findAllMovies();
+        return cinemaService.findAllMovies();
     }
 
     @GetMapping("/session")
     public List<SessionDto> getAllSessions() {
-        return cinemaClientService.findAllSessions();
+        return cinemaService.findAllSessions();
     }
 
     @GetMapping("/session/{sessionId}/free-place")
     public List<String> getFreePlaces(@PathVariable Integer sessionId) {
-        return cinemaClientService.findFreePlacesOnSession(sessionId);
+        return cinemaService.findFreePlacesOnSession(sessionId);
     }
 
     @PostMapping("/ticket/booking")
     public BookingDtoRs purchaseTicket(@RequestBody BookingDtoRq dto) {
-        return cinemaClientService.purchaseTicket(dto);
+        return cinemaService.purchaseTicket(dto);
     }
 }

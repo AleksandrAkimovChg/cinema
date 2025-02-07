@@ -8,13 +8,13 @@ import lombok.NonNull;
 @Data
 public class BookingDtoRq {
     @JsonProperty(value = "session_id", required = true)
-    private Integer id;
+    private Integer sessionId;
     @JsonProperty(value = "place_name", required = true)
     private String place;
 
     @JsonCreator
-    public BookingDtoRq(@NonNull Integer id, @NonNull String place) {
-        this.id = id;
+    public BookingDtoRq(@NonNull Integer sessionId, @NonNull String place) {
+        this.sessionId = sessionId;
         this.place = place;
     }
 }

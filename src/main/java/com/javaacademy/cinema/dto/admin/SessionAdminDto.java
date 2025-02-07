@@ -14,5 +14,5 @@ public class SessionAdminDto {
     @NonNull
     private BigDecimal price;
     @NonNull
-    private Integer movie;
+    private Integer movieId;
 }
