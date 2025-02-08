@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum TestUtilSimpleQuery {
+public enum TestUtilSqlQuery {
 
     LAST_MOVIE_ID(
             """

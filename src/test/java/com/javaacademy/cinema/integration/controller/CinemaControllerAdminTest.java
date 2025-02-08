@@ -33,14 +33,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
-import static com.javaacademy.cinema.controller.CinemaAdminController.SECRET_TOKEN_CHECK_FAILED;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_ALL_PLACES;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_SOLD_TICKETS;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_MOVIE_ID;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_PLACE_ID;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_SESSION_ID;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_SESSION_WITH_SOLD_TICKET;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_TICKET_ID;
+import static com.javaacademy.cinema.service.SecurityHelper.SECRET_TOKEN_CHECK_FAILED;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_ALL_PLACES;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_SOLD_TICKETS;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_MOVIE_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_PLACE_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_SESSION_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_SESSION_WITH_SOLD_TICKET;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_TICKET_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @DisplayName("Тестирование контроллера CinemaAdminController")
-public class CinemaAdminControllerTest {
+public class CinemaControllerAdminTest {
     public static final String BASE_ADMIN_PATH = "/api/v1";
     public static final String MOVIE_PATH = "/movie";
     public static final String SESSION_PATH = "/session";

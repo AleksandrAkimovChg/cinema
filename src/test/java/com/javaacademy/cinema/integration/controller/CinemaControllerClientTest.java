@@ -29,20 +29,20 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.javaacademy.cinema.integration.controller.CinemaAdminControllerTest.MOVIE_PATH;
-import static com.javaacademy.cinema.integration.controller.CinemaAdminControllerTest.SESSION_PATH;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_ALL_MOVIES;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_ALL_SESSIONS;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.COUNT_FREE_PLACES_ON_SESSION;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_SESSION_ID;
-import static com.javaacademy.cinema.integration.controller.TestUtilSimpleQuery.LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID;
+import static com.javaacademy.cinema.integration.controller.CinemaControllerAdminTest.MOVIE_PATH;
+import static com.javaacademy.cinema.integration.controller.CinemaControllerAdminTest.SESSION_PATH;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_ALL_MOVIES;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_ALL_SESSIONS;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_FREE_PLACES_ON_SESSION;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_SESSION_ID;
+import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @DisplayName("Тестирование контроллера CinemaClientController")
-public class CinemaClientControllerTest {
+public class CinemaControllerClientTest {
     public static final String BASE_PATH = "/api/v1";
     public static final String FREE_PLACES_PATH = "/session/%s/free-place";
     public static final String TICKET_BOOKING_PATH = "/ticket/booking";
