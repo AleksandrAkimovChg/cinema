@@ -5,9 +5,6 @@ import com.javaacademy.cinema.dto.client.BookingDtoRs;
 import com.javaacademy.cinema.dto.client.MovieDto;
 import com.javaacademy.cinema.dto.client.SessionDto;
 import com.javaacademy.cinema.entity.Ticket;
-import com.javaacademy.cinema.mapper.CinemaMapper;
-import com.javaacademy.cinema.repository.PlaceRepository;
-import com.javaacademy.cinema.repository.SessionRepository;
 import com.javaacademy.cinema.repository.TicketRepository;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -31,17 +28,18 @@ import java.util.List;
 
 import static com.javaacademy.cinema.integration.controller.CinemaControllerAdminTest.MOVIE_PATH;
 import static com.javaacademy.cinema.integration.controller.CinemaControllerAdminTest.SESSION_PATH;
-import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_ALL_MOVIES;
-import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_ALL_SESSIONS;
-import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.COUNT_FREE_PLACES_ON_SESSION;
-import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_SESSION_ID;
-import static com.javaacademy.cinema.integration.controller.TestUtilSqlQuery.LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID;
+import static com.javaacademy.cinema.integration.controller.TestHelperSqlQuery.COUNT_ALL_MOVIES;
+import static com.javaacademy.cinema.integration.controller.TestHelperSqlQuery.COUNT_ALL_SESSIONS;
+import static com.javaacademy.cinema.integration.controller.TestHelperSqlQuery.COUNT_FREE_PLACES_ON_SESSION;
+import static com.javaacademy.cinema.integration.controller.TestHelperSqlQuery.LAST_SESSION_ID;
+import static com.javaacademy.cinema.integration.controller.TestHelperSqlQuery.NOT_SOLD_LAST_TICKET_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
-@DisplayName("Тестирование контроллера CinemaClientController")
+@DisplayName("Тестирование эндпоинтов контроллера CinemaController, "
+        + "за исключением эндпоинтов с доступом администратора")
 public class CinemaControllerClientTest {
     public static final String BASE_PATH = "/api/v1";
     public static final String FREE_PLACES_PATH = "/session/%s/free-place";
@@ -50,13 +48,7 @@ public class CinemaControllerClientTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private CinemaMapper cinemaMapper;
-    @Autowired
     private TicketRepository ticketRepository;
-    @Autowired
-    private SessionRepository sessionRepository;
-    @Autowired
-    private PlaceRepository placeRepository;
 
     private final RequestSpecification requestSpec = new RequestSpecBuilder()
             .setBasePath(BASE_PATH)
@@ -66,7 +58,6 @@ public class CinemaControllerClientTest {
     private final ResponseSpecification responseSpec = new ResponseSpecBuilder()
             .log(LogDetail.ALL)
             .build();
-
 
     @Test
     @DisplayName("Успешное получение списка фильмов кинотеатра")
@@ -109,7 +100,7 @@ public class CinemaControllerClientTest {
     }
 
     @Test
-    @DisplayName("Успешное получение списка списка свободных мест на сеанс кинотеатра")
+    @DisplayName("Успешное получение списка свободных мест на сеанс кинотеатра")
     public void getFreePLacesSuccess() {
         Integer lastSessionId = jdbcTemplate.queryForObject(
                 LAST_SESSION_ID.getSqlQuery(),
@@ -137,7 +128,7 @@ public class CinemaControllerClientTest {
     public void getBuyTicketSuccess() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
         Ticket expectedTicket = jdbcTemplate.queryForObject(
-                LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID.getSqlQuery(),
+                NOT_SOLD_LAST_TICKET_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID.getSqlQuery(),
                 ticketRepository::mapToTicket);
         BookingDtoRq bookingDtoRq = new BookingDtoRq(
                 expectedTicket.getSession().getId(),

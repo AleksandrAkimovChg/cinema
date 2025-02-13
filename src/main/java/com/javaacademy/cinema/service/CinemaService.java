@@ -28,7 +28,7 @@ import static com.javaacademy.cinema.repository.TicketRepository.TICKET_NOT_FOUN
 @Service
 @RequiredArgsConstructor
 public class CinemaService {
-    public static final String TICKET_ALREADY_SOLD = "Билет с № %s уже продан";
+    public static final String TICKET_ALREADY_SOLD = "Билет c №%s на сеанс №%s с номером места №%s уже продан";
 
     private final CinemaMapper cinemaMapper;
     private final MovieRepository movieRepository;
@@ -63,17 +63,19 @@ public class CinemaService {
 
     public List<String> findFreePlacesOnSession(Integer sessionId) {
         List<Place> placeList = ticketRepository.findAllNotSoldTicket(sessionId).stream()
-                .map(ticket -> ticket.getPlace()).toList();
+                .map(Ticket::getPlace).toList();
         return cinemaMapper.convertToNamePlaces(placeList);
     }
 
     public BookingDtoRs purchaseTicket(BookingDtoRq dto) {
         Ticket ticket = ticketRepository.findTicketBySessionIdAndPlaceName(dto.getSessionId(), dto.getPlace())
-                .orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
+                .orElseThrow(() -> new TicketNotFoundException(
+                        TICKET_NOT_FOUND.formatted(dto.getSessionId(), dto.getPlace())));
         if (ticket.isSold()) {
-            throw new TicketAlreadySoldException(TICKET_ALREADY_SOLD.formatted(ticket.getId()));
+            throw new TicketAlreadySoldException(
+                    TICKET_ALREADY_SOLD.formatted(ticket.getId(), dto.getSessionId(), dto.getPlace()));
         }
-        ticketRepository.soldBySessionIdAndName(dto.getSessionId(), dto.getPlace());
+        ticketRepository.soldBySessionIdAndName(ticket);
         return cinemaMapper.convertToBookingDtoRs(ticket);
     }
 

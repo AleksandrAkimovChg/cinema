@@ -18,11 +18,10 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class TicketRepository {
-    public static final String TICKET_NOT_FOUND = "Билет не найден";
     public static final String SESSION_NOT_FOUND = "Сеанс с таким id не найден";
     public static final String PLACE_NOT_FOUND = "Место не найдено";
     public static final String TICKET_NOT_SOLD = "Операция временно не доступна. Попробуйте повторить позднее.";
-    public static final String NOT_FOUND_TICKET_BY_SESSION_ID_AND_PLACE_NAME = "Нет билета на сеанс %s c местом %s";
+    public static final String TICKET_NOT_FOUND = "Не найден билет на сеанс %s c местом %s";
 
     private final JdbcTemplate jdbcTemplate;
     private final SessionRepository sessionRepository;
@@ -69,7 +68,8 @@ public class TicketRepository {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, this::mapToTicket, sessionId, placeName));
         } catch (IncorrectResultSizeDataAccessException ex) {
-            throw new TicketNotFoundException(NOT_FOUND_TICKET_BY_SESSION_ID_AND_PLACE_NAME);
+            throw new TicketNotFoundException(
+                    TICKET_NOT_FOUND.formatted(sessionId, placeName));
         }
     }
 
@@ -89,9 +89,7 @@ public class TicketRepository {
         return ticket;
     }
 
-    public void soldBySessionIdAndName(Integer sessionId, String placeName) {
-        Ticket ticket = findTicketBySessionIdAndPlaceName(sessionId, placeName)
-                .orElseThrow(() -> new TicketNotFoundException(TICKET_NOT_FOUND));
+    public void soldBySessionIdAndName(Ticket ticket) {
         String sql = """
                 update ticket
                 set is_purchased = true

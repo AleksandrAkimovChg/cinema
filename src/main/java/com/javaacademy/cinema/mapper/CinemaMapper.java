@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.javaacademy.cinema.repository.SessionRepository.FILM_NOT_FOUND;
@@ -52,14 +53,13 @@ public class CinemaMapper {
     public Session convertToSession(SessionAdminDto dto) {
         try {
             LocalDateTime dateTime = LocalDateTime.parse(dto.getDateTime(), formatter);
-            Session session = new Session(
+            return new Session(
                     null,
                     dateTime,
                     dto.getPrice(),
                     movieRepository.findById(dto.getMovieId())
                             .orElseThrow(() -> new MovieNotFoundException(FILM_NOT_FOUND))
             );
-            return session;
         } catch (RuntimeException ex) {
             throw new SessionDateTimeInvalidFormatException(
                     INVALID_DATE_TIME_FORMAT.formatted(dto.getDateTime(), DATE_TIME_PATTERN));
@@ -90,12 +90,11 @@ public class CinemaMapper {
         return new TicketAdminDto(
                 ticket.getId(),
                 ticket.getSession().getId(),
-                ticket.getPlace().getName(),
-                ticket.isSold());
+                ticket.getPlace().getName());
     }
 
     public List<TicketAdminDto> convertToTicketDtos(List<Ticket> ticket) {
-        return ticket.stream().map(this::convertToTicketDto).toList();
+        return ticket.stream().sorted(Comparator.comparing(Ticket::getId)).map(this::convertToTicketDto).toList();
     }
 
     public BookingDtoRs convertToBookingDtoRs(Ticket ticket) {

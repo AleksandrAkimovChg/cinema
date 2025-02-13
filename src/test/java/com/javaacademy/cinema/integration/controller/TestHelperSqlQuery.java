@@ -5,79 +5,67 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum TestUtilSqlQuery {
+public enum TestHelperSqlQuery {
 
-    LAST_MOVIE_ID(
-            """
+    LAST_MOVIE_ID("""
                     select id
                     from movie
                     order by id desc limit 1;
                     """),
-    LAST_SESSION_ID(
-            """
+    CURRENT_SEQ_MOVIE_ID("""
+                    select currval('movie_id_seq');
+                    """),
+    LAST_SESSION_ID("""
                     select id
                     from session
                     order by id desc
                     limit 1;
                     """),
-    LAST_TICKET_ID(
-            """
-                    select id
+    CURRENT_SEQ_SESSION_ID("""
+                    select currval('session_id_seq');
+                    """),
+    COUNT_ALL_TICKET_ON_SESSION("""
+                    select count(*)
                     from ticket
-                    order by id desc
-                    limit 1;
+                    where session_id = ?;
                     """),
-    LAST_PLACE_ID(
-            """
-                    select id
-                    from place
-                    order by id desc
-                    limit 1;
-                    """),
-    COUNT_ALL_PLACES(
-            """
+    COUNT_ALL_PLACES("""
                     select count(*)
                     from place;
                     """),
-    COUNT_ALL_MOVIES(
-            """
+    COUNT_ALL_MOVIES("""
                     select count(*)
                     from movie;
                     """),
-    COUNT_ALL_SESSIONS(
-            """
+    COUNT_ALL_SESSIONS("""
                     select count(*)
                     from session;
                     """),
-    LAST_SESSION_WITH_SOLD_TICKET(
-            """
+    SESSION_IN_LAST_SOLD_TICKET("""
                     select distinct session_id
                     from ticket
                     where is_purchased = true
                     order by session_id desc
                     limit 1;
                     """),
-    COUNT_SOLD_TICKETS(
-            """
+    COUNT_SOLD_TICKETS_ON_SESSION("""
                     select count(*)
                     from ticket
                     where session_id = ? and is_purchased = true;
                     """),
-    COUNT_FREE_PLACES_ON_SESSION(
-            """
+    COUNT_FREE_PLACES_ON_SESSION("""
                     select count(*)
                     from ticket
                     where session_id = ? and is_purchased = false;
                     """),
-    LAST_TICKET_NOT_SOLD_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID(
-            """
-                    select t.*
-                    from ticket t
-                        inner join place p on t.place_id = p.id
-                    where t.is_purchased = false
-                    order by id, session_id, place_id
-                    limit 1;
-                   """),;
+    NOT_SOLD_LAST_TICKET_BY_LAST_SESSION_ID_AND_LAST_PLACE_ID("""
+                     select t.*
+                     from ticket t
+                         inner join place p on t.place_id = p.id
+                     where t.is_purchased = false
+                     order by id, session_id, place_id
+                     limit 1;
+                    """);
 
     private final String sqlQuery;
 }

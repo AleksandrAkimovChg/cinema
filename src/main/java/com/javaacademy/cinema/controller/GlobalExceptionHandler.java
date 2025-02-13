@@ -21,11 +21,6 @@ public class GlobalExceptionHandler extends RuntimeException {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 
-    @ExceptionHandler(TicketAlreadySoldException.class)
-    public ResponseEntity handlerTicketAlreadySoldException(RuntimeException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-    }
-
     @ExceptionHandler(SessionDateTimeInvalidFormatException.class)
     public ResponseEntity handlerSessionDateTimeInvalidFormatException(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -34,6 +29,11 @@ public class GlobalExceptionHandler extends RuntimeException {
     @ExceptionHandler(TicketNotFoundException.class)
     public ResponseEntity handlerTicketNotFoundException(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(TicketAlreadySoldException.class)
+    public ResponseEntity handlerTicketAlreadySoldException(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 
     @ExceptionHandler(TicketNotSoldException.class)
