@@ -1,4 +1,4 @@
-package com.javaacademy.cinema.service;
+package com.javaacademy.cinema.service.authorization;
 
 import com.javaacademy.cinema.config.CinemaSecurityProperty;
 import com.javaacademy.cinema.exception.SecretTokenCheckFailedException;
@@ -10,12 +10,13 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class SecurityHelper {
+public class AuthorizationServiceImpl implements AuthorizationService {
     public static final String SECRET_TOKEN_CHECK_FAILED = "Нет прав на операцию. Обратитесь в службу поддержки.";
 
     private final CinemaSecurityProperty cinemaSecurityProperty;
 
-    public void checkSecurityToken(Map<String, String> headers) {
+    @Override
+    public void checkSecurity(Map<String, String> headers) {
         if (!headers.containsKey(cinemaSecurityProperty.getHeader())
                 || !isSecurityTokenEquals(headers.get(cinemaSecurityProperty.getHeader()))) {
             throw new SecretTokenCheckFailedException(SECRET_TOKEN_CHECK_FAILED);

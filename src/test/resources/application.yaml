@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cinema_test
+    username: postgres
+    password: 123456
+    driver: org.postgresql.Driver
+
+app:
+  security:
+    header: "user-token"
+    token: "secretadmin123"
+
+logging:
+  level:
+    root: INFO
+    com.javaacademy.cinema: DEBUG
