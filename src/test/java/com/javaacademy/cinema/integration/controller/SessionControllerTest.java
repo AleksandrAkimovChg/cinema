@@ -1,6 +1,5 @@
 package com.javaacademy.cinema.integration.controller;
 
-import com.javaacademy.cinema.dto.admin.MovieAdminDto;
 import com.javaacademy.cinema.dto.admin.SessionAdminDto;
 import com.javaacademy.cinema.dto.client.SessionDto;
 import com.javaacademy.cinema.entity.Movie;
